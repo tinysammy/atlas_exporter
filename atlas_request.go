@@ -7,14 +7,14 @@ import (
 
 	"github.com/DNS-OARC/ripeatlas"
 	"github.com/DNS-OARC/ripeatlas/measurement"
-	"github.com/czerwonk/atlas_exporter/dns"
-	"github.com/czerwonk/atlas_exporter/http"
-	"github.com/czerwonk/atlas_exporter/metric"
-	"github.com/czerwonk/atlas_exporter/ntp"
-	"github.com/czerwonk/atlas_exporter/ping"
-	"github.com/czerwonk/atlas_exporter/probe"
-	"github.com/czerwonk/atlas_exporter/sslcert"
-	"github.com/czerwonk/atlas_exporter/traceroute"
+	"github.com/r3ek0/atlas_exporter/dns"
+	"github.com/r3ek0/atlas_exporter/http"
+	"github.com/r3ek0/atlas_exporter/metric"
+	"github.com/r3ek0/atlas_exporter/ntp"
+	"github.com/r3ek0/atlas_exporter/ping"
+	"github.com/r3ek0/atlas_exporter/probe"
+	"github.com/r3ek0/atlas_exporter/sslcert"
+	"github.com/r3ek0/atlas_exporter/traceroute"
 	"github.com/prometheus/common/log"
 )
 
@@ -71,6 +71,10 @@ func getMeasurement(id string) ([]metric.MetricExporter, error) {
 	}
 
 	return res, nil
+}
+
+func getProbeList() []probe.Probe {
+	return cache.GetAll()
 }
 
 func getMetricExporter(r *measurement.Result, out chan metric.MetricExporter) {

@@ -9,10 +9,11 @@ import (
 
 	"time"
 
-	"github.com/czerwonk/atlas_exporter/metric"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
+	"github.com/r3ek0/atlas_exporter/metric"
+	"github.com/r3ek0/atlas_exporter/probe"
 )
 
 const version string = "0.6.0"
@@ -21,6 +22,7 @@ var (
 	showVersion          = flag.Bool("version", false, "Print version information.")
 	listenAddress        = flag.String("web.listen-address", ":9400", "Address on which to expose metrics and web interface.")
 	metricsPath          = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+	probesPath           = flag.String("web.probes-path", "/probes", "Path under which to expose probe information.")
 	filterInvalidResults = flag.Bool("filter.invalid-results", true, "Exclude offline/incompatible probes")
 	cacheTtl             = flag.Int("cache.ttl", 3600, "Cache time to live in seconds")
 	cacheCleanUp         = flag.Int("cache.cleanup", 300, "Interval for cache clean up in seconds")
@@ -49,6 +51,7 @@ func printVersion() {
 	fmt.Println("atlas_exporter")
 	fmt.Printf("Version: %s\n", version)
 	fmt.Println("Author(s): Daniel Czerwonk")
+	fmt.Println("Fork: @r3ek0")
 	fmt.Println("Metric exporter for RIPE Atlas measurements")
 	fmt.Println("This software uses Go bindings from the DNS-OARC project (https://github.com/DNS-OARC/ripeatlas)")
 }
@@ -65,10 +68,13 @@ func startServer() {
 			<p><a href="` + *metricsPath + `?measurement_id=8809582">` + r.Host + *metricsPath + `?measurement_id=8809582</a></p>
 			<h2>More information</h2>
 			<p><a href="https://github.com/czerwonk/atlas_exporter">github.com/czerwonk/atlas_exporter</a></p>
+			<h2>This fork with probes endpoint</h2>
+			<p><a href="https://github.com/r3ek0/atlas_exporter">github.com/r3ek0/atlas_exporter</a></p>
 			</body>
 			</html>`))
 	})
 	http.HandleFunc(*metricsPath, errorHandler(handleMetricsRequest))
+	http.HandleFunc(*probesPath, errorHandler(handleProbeListRequest))
 
 	log.Infof("Cache TTL: %v\n", time.Duration(*cacheTtl)*time.Second)
 	log.Infof("Cache cleanup interval (seconds): %v\n", time.Duration(*cacheCleanUp)*time.Second)
@@ -87,6 +93,18 @@ func errorHandler(f func(http.ResponseWriter, *http.Request) error) http.Handler
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+}
+
+func handleProbeListRequest(w http.ResponseWriter, r *http.Request) error {
+	probes := getProbeList()
+	jsonProbeList, err := probe.GetProbeLocationList(probes)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	fmt.Fprintf(w, "%s", jsonProbeList)
+	return nil
 }
 
 func handleMetricsRequest(w http.ResponseWriter, r *http.Request) error {
